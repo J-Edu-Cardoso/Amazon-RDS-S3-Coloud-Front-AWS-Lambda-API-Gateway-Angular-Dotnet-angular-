@@ -8,8 +8,9 @@ Esta aplicação web apresenta uma visualização interativa de uma arquitetura 
 
 ## Diagrama da Arquitetura
 
-  <img src="Image01.jpg: 18px; box-shadow: 0 8px 40px rgba(74,158,255,0.22);">
-
+<p>
+  <img src="Imagem01.jpg">
+</p>
 
 > **Legenda:**
 > - **SPA Angular** → **CloudFront** → **Amazon S3** (conteúdo estático)
