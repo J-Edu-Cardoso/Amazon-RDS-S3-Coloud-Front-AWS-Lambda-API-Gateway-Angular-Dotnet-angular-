@@ -8,9 +8,7 @@ Esta aplicação web apresenta uma visualização interativa de uma arquitetura 
 
 ## Diagrama da Arquitetura
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/aws-samples/modern-architecture-diagrams/main/angular-dotnet-aws-modern.png" alt="Diagrama Arquitetura .NET + Angular na AWS" style="max-width: 700px; border-radius: 18px; box-shadow: 0 8px 40px rgba(74,158,255,0.22);">
-</p>
+![Diagrama da Arquitetura](Image01.jpg)
 
 > **Legenda:**
 > - **SPA Angular** → **CloudFront** → **Amazon S3** (conteúdo estático)
