@@ -8,9 +8,7 @@ Esta aplicação web apresenta uma visualização interativa de uma arquitetura 
 
 ## Diagrama da Arquitetura
 
-<p>
-  <img src="Imagem01.jpg">
-</p>
+![Diagrama da Arquitetura](Image01.jpg)
 
 > **Legenda:**
 > - **SPA Angular** → **CloudFront** → **Amazon S3** (conteúdo estático)
