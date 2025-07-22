@@ -1,0 +1,38 @@
+.item-list {
+  max-width: 400px;
+  margin: 24px auto;
+  padding: 16px;
+  background: #f5f6fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.item-list h2 {
+  margin-bottom: 12px;
+}
+.item-list ul {
+  list-style: none;
+  padding: 0;
+}
+.item-list li {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.item-list input {
+  margin-right: 8px;
+  padding: 4px 8px;
+}
+.item-list button {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #4a9eff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+.item-list button:hover {
+  background: #0066cc;
+}

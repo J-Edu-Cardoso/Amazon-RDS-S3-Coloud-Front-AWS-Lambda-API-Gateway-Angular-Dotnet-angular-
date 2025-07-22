@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitetura .NET + Angular na AWS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #181828 0%, #23234e 100%);
+            color: #fff;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.7em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.85;
+        }
+        .architecture-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 600px;
+            margin: 20px 0;
+        }
+        .component {
+            position: absolute;
+            border: 2px solid #4a9eff;
+            border-radius: 16px;
+            background: rgba(74, 158, 255, 0.13);
+            backdrop-filter: blur(12px);
+            padding: 22px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(.4,2,.2,1);
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(74, 158, 255, 0.22);
+        }
+        .component:hover {
+            transform: translateY(-7px) scale(1.03);
+            box-shadow: 0 16px 40px rgba(74, 158, 255, 0.38);
+            background: rgba(74, 158, 255, 0.23);
+        }
+        .component.active {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.22);
+            box-shadow: 0 20px 50px rgba(255, 107, 53, 0.38);
+            transform: scale(1.07);
+        }
+        .component h3 {
+            font-size: 1.15em;
+            margin-bottom: 7px;
+            color: #fff;
+        }
+        .component p {
+            font-size: 0.95em;
+            opacity: 0.8;
+            color: #e0e0e0;
+        }
+        .connection {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #4a9eff, transparent);
+            animation: pulse 2s ease-in-out infinite;
+            border-radius: 2px;
+        }
+        .connection.vertical {
+            width: 4px;
+            background: linear-gradient(180deg, transparent, #4a9eff, transparent);
+        }
+        .connection.active {
+            background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+            animation: flow 1.5s ease-in-out infinite;
+        }
+        .connection.vertical.active {
+            background: linear-gradient(180deg, transparent, #ff6b35, transparent);
+        }
+        .controls {
+            display: flex;
+            gap: 18px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 13px 28px;
+            background: linear-gradient(45deg, #4a9eff, #0066cc);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.08em;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(.4,2,.2,1);
+            box-shadow: 0 4px 18px rgba(74, 158, 255, 0.24);
+            letter-spacing: 0.5px;
+        }
+        .btn:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 12px 28px rgba(74, 158, 255, 0.36);
+            background: linear-gradient(45deg, #0066cc, #4a9eff);
+        }
+        .btn.active {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            box-shadow: 0 8px 28px rgba(255, 107, 53, 0.38);
+        }
+        .status-panel {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            background: rgba(0, 0, 0, 0.88);
+            border-radius: 12px;
+            padding: 22px;
+            max-width: 320px;
+            z-index: 200;
+            box-shadow: 0 2px 24px rgba(0,0,0,0.18);
+        }
+        .status-panel h3 {
+            margin-bottom: 15px;
+            color: #4a9eff;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+            background: #666;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background: #4caf50;
+            box-shadow: 0 0 12px #4caf50;
+        }
+        .tech-stack {
+            margin-top: 32px;
+            text-align: center;
+        }
+        .tech-stack h3 {
+            margin-bottom: 15px;
+            color: #4a9eff;
+        }
+        .tech-icons {
+            display: flex;
+            justify-content: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+        .tech-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(74, 158, 255, 0.13);
+            border: 2px solid #4a9eff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7em;
+            transition: all 0.3s cubic-bezier(.4,2,.2,1);
+        }
+        .tech-icon:hover {
+            transform: translateY(-7px) scale(1.08);
+            background: rgba(74, 158, 255, 0.23);
+        }
+        /* Balão explicativo */
+        .explanation-balloon {
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
+    left: auto;
+    top: auto;
+    transform: none;
+    background: rgba(34, 36, 60, 0.98);
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(74,158,255,0.22);
+    padding: 32px 32px 26px 32px;
+    z-index: 9999;
+    min-width: 320px;
+    max-width: 90vw;
+    min-height: 90px;
+    max-height: 60vh;
+    color: #fff;
+    font-size: 1.16em;
+    display: none;
+    animation: balloonIn 0.4s cubic-bezier(.4,2,.2,1);
+}
+@media (max-width: 900px) {
+    .explanation-balloon {
+        right: 12px;
+        bottom: 12px;
+        min-width: 180px;
+        font-size: 1em;
+        padding: 16px 10px 12px 12px;
+    }
+}
+@keyframes balloonIn {
+    0% { opacity: 0; transform: translateY(30px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+        .explanation-balloon.active {
+            display: block;
+        }
+        .explanation-balloon .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #ff6b35;
+            font-size: 1.5em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .explanation-balloon .close-btn:hover {
+            color: #f7931e;
+        }
+        @keyframes balloonIn {
+            0% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @media (max-width: 900px) {
+            .architecture-container { max-width: 95vw; height: 400px; }
+            .status-panel { position: relative; right: auto; top: auto; margin-top: 20px; }
+        }
+        @media (max-width: 600px) {
+            .architecture-container { height: 280px; }
+            .explanation-balloon { padding: 16px 12px 12px 16px; min-width: 180px; font-size: 1em; }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        .architecture-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 600px;
+            margin: 20px 0;
+        }
+        .component {
+            position: absolute;
+            border: 2px solid #4a9eff;
+            border-radius: 12px;
+            background: rgba(74, 158, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(74, 158, 255, 0.3);
+        }
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(74, 158, 255, 0.5);
+            background: rgba(74, 158, 255, 0.2);
+        }
+        .component.active {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.2);
+            box-shadow: 0 15px 35px rgba(255, 107, 53, 0.5);
+            transform: scale(1.05);
+        }
+        .component h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+        .component p {
+            font-size: 0.9em;
+            opacity: 0.8;
+            color: #cccccc;
+        }
+        .angular-spa {
+            top: 50px;
+            left: 50px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(221, 0, 49, 0.2), rgba(221, 0, 49, 0.1));
+            border-color: #dd0031;
+        }
+        .cloudfront {
+            top: 50px;
+            left: 300px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 0.1));
+            border-color: #ff9800;
+        }
+        .s3 {
+            top: 50px;
+            left: 550px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(105, 179, 76, 0.2), rgba(105, 179, 76, 0.1));
+            border-color: #69b34c;
+        }
+        .api-gateway {
+            top: 350px;
+            left: 50px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(146, 0, 255, 0.2), rgba(146, 0, 255, 0.1));
+            border-color: #9200ff;
+        }
+        .lambda {
+            top: 350px;
+            left: 300px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(255, 183, 77, 0.2), rgba(255, 183, 77, 0.1));
+            border-color: #ffb74d;
+        }
+        .rds {
+            top: 350px;
+            left: 550px;
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(41, 128, 185, 0.2), rgba(41, 128, 185, 0.1));
+            border-color: #2980b9;
+        }
+        .connection {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #4a9eff, transparent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .connection.vertical {
+            width: 3px;
+            background: linear-gradient(180deg, transparent, #4a9eff, transparent);
+        }
+        .connection.active {
+            background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+            animation: flow 1.5s ease-in-out infinite;
+        }
+        .connection.vertical.active {
+            background: linear-gradient(180deg, transparent, #ff6b35, transparent);
+        }
+        .conn-angular-cloudfront {
+            top: 99px;
+            left: 230px;
+            width: 70px;
+        }
+        .conn-cloudfront-s3 {
+            top: 99px;
+            left: 480px;
+            width: 70px;
+        }
+        .conn-api-lambda {
+            top: 399px;
+            left: 230px;
+            width: 70px;
+        }
+        .conn-lambda-rds {
+            top: 399px;
+            left: 480px;
+            width: 70px;
+        }
+        .conn-angular-api {
+            top: 150px;
+            left: 139px;
+            height: 200px;
+        }
+        .data-flow {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff6b35;
+            opacity: 0;
+            box-shadow: 0 0 15px #ff6b35;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        @keyframes flow {
+            0% { opacity: 0.5; filter: brightness(1); }
+            50% { opacity: 1; filter: brightness(1.5); }
+            100% { opacity: 0.5; filter: brightness(1); }
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #4a9eff, #0066cc);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 158, 255, 0.5);
+            background: linear-gradient(45deg, #0066cc, #4a9eff);
+        }
+        .btn.active {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+        }
+        .status-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 300px;
+            z-index: 100;
+        }
+        .status-panel h3 {
+            margin-bottom: 15px;
+            color: #4a9eff;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: #666;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+        .tech-stack {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .tech-stack h3 {
+            margin-bottom: 15px;
+            color: #4a9eff;
+        }
+        .tech-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .tech-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(74, 158, 255, 0.1);
+            border: 2px solid #4a9eff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+        }
+        .tech-icon:hover {
+            transform: translateY(-5px);
+            background: rgba(74, 158, 255, 0.2);
+        }
+        @media (max-width: 768px) {
+            .architecture-container {
+                transform: scale(0.8);
+                height: 500px;
+            }
+            .status-panel {
+                position: relative;
+                margin-top: 20px;
+                right: auto;
+                top: auto;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Arquitetura .NET + Angular na AWS</h1>
+        <p>Demonstração interativa do fluxo de dados</p>
+    </div>
+    <div class="architecture-container">
+        <!-- Frontend Layer -->
+        <div class="component angular-spa" data-component="angular">
+            <h3>Angular SPA</h3>
+            <p>(Frontend)</p>
+        </div>
+        <div class="component cloudfront" data-component="cloudfront">
+            <h3>CloudFront</h3>
+            <p>(CDN Global)</p>
+        </div>
+        <div class="component s3" data-component="s3">
+            <h3>Amazon S3</h3>
+            <p>(Storage)</p>
+        </div>
+        <div class="component api-gateway" data-component="api-gateway">
+            <h3>API Gateway</h3>
+            <p>(Gateway REST)</p>
+        </div>
+        <div class="component lambda" data-component="lambda">
+            <h3>AWS Lambda</h3>
+            <p>(.NET APIs)</p>
+        </div>
+        <div class="component rds" data-component="rds">
+            <h3>Amazon RDS</h3>
+            <p>(Database)</p>
+        </div>
+        <!-- Conexões -->
+        <div class="connection conn-angular-cloudfront"></div>
+        <div class="connection conn-cloudfront-s3"></div>
+        <div class="connection conn-api-lambda"></div>
+        <div class="connection conn-lambda-rds"></div>
+        <div class="connection vertical conn-angular-api"></div>
+    </div>
+    <div class="explanation-balloon" id="explanationBalloon">
+        <button class="close-btn" onclick="hideBalloon()">&times;</button>
+        <span id="explanationText"></span>
+    </div>
+    <div class="controls">
+        <button class="btn" onclick="simulateUserRequest(); showBalloon('user')">👤 Requisição do Usuário</button>
+        <button class="btn" onclick="simulateApiCall(); showBalloon('api')">🔄 Chamada API</button>
+        <button class="btn" onclick="simulateDataFlow(); showBalloon('data')">📊 Fluxo de Dados</button>
+        <button class="btn" onclick="resetAnimation(); showBalloon('reset')">🔄 Reset</button>
+        <button class="btn" onclick="autoDemo(); showBalloon('auto')">▶️ Demo Automático</button>
+    </div>
+    <div class="status-panel">
+        <h3>Status dos Serviços</h3>
+        <div class="status-item">
+            <div class="status-dot" id="status-cloudfront"></div>
+            CloudFront
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="status-s3"></div>
+            Amazon S3
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="status-api"></div>
+            API Gateway
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="status-lambda"></div>
+            AWS Lambda
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="status-rds"></div>
+            Amazon RDS
+        </div>
+    </div>
+    <div class="tech-stack">
+        <h3>Stack Tecnológico</h3>
+        <div class="tech-icons">
+            <div class="tech-icon" title=".NET Core">🔷</div>
+            <div class="tech-icon" title="Angular">🅰️</div>
+            <div class="tech-icon" title="TypeScript">📘</div>
+            <div class="tech-icon" title="AWS">☁️</div>
+            <div class="tech-icon" title="Docker">🐳</div>
+        </div>
+    </div>
+    <script>
+        // Explicações dos fluxos
+        const explanations = {
+            'user': 'Este fluxo simula uma requisição feita pelo usuário ao frontend Angular. O pedido passa pela CDN (CloudFront) e chega ao armazenamento (Amazon S3), mostrando como o conteúdo estático é entregue rapidamente ao usuário.',
+            'api': 'Aqui você vê o caminho de uma chamada de API. O frontend Angular aciona o API Gateway, que direciona a requisição para uma função Lambda (backend .NET), que por sua vez pode acessar o banco de dados Amazon RDS.',
+            'data': 'Este fluxo mostra o ciclo completo dos dados: do usuário ao frontend, passando por toda a infraestrutura AWS até o banco de dados, demonstrando a integração dos serviços.',
+            'reset': 'O reset limpa todas as animações e estados ativos, permitindo que você recomece a visualização dos fluxos.',
+            'auto': 'A demonstração automática executa todos os fluxos em sequência, facilitando o entendimento do funcionamento geral da arquitetura.'
+        };
+        function showBalloon(type) {
+            const balloon = document.getElementById('explanationBalloon');
+            const text = document.getElementById('explanationText');
+            text.innerText = explanations[type] || '';
+            balloon.classList.add('active');
+        }
+        function hideBalloon() {
+            document.getElementById('explanationBalloon').classList.remove('active');
+        }
+
+        let animationRunning = false;
+        let autoMode = false;
+        function activateComponent(componentName, duration = 1000) {
+            const component = document.querySelector(`[data-component="${componentName}"]`);
+            const statusDot = document.getElementById(`status-${componentName === 'api-gateway' ? 'api' : componentName}`);
+            if (component) {
+                component.classList.add('active');
+                if (statusDot) statusDot.classList.add('active');
+                setTimeout(() => {
+                    component.classList.remove('active');
+                    if (statusDot) statusDot.classList.remove('active');
+                }, duration);
+            }
+        }
+        function activateConnection(connectionClass, duration = 1000) {
+            const connections = document.querySelectorAll(`.${connectionClass}`);
+            connections.forEach(conn => {
+                conn.classList.add('active');
+                setTimeout(() => {
+                    conn.classList.remove('active');
+                }, duration);
+            });
+        }
+        function simulateUserRequest() {
+            if (animationRunning) return;
+            animationRunning = true;
+            activateComponent('angular', 800);
+            setTimeout(() => {
+                activateConnection('conn-angular-cloudfront', 600);
+            }, 200);
+            setTimeout(() => {
+                activateComponent('cloudfront', 800);
+            }, 600);
+            setTimeout(() => {
+                activateConnection('conn-cloudfront-s3', 600);
+            }, 800);
+            setTimeout(() => {
+                activateComponent('s3', 1000);
+            }, 1200);
+            setTimeout(() => {
+                animationRunning = false;
+            }, 2500);
+        }
+        function simulateApiCall() {
+            if (animationRunning) return;
+            animationRunning = true;
+            activateComponent('angular', 600);
+            setTimeout(() => {
+                activateConnection('conn-angular-api', 800);
+            }, 200);
+            setTimeout(() => {
+                activateComponent('api-gateway', 800);
+            }, 800);
+            setTimeout(() => {
+                activateConnection('conn-api-lambda', 600);
+            }, 1000);
+            setTimeout(() => {
+                activateComponent('lambda', 1000);
+            }, 1400);
+            setTimeout(() => {
+                activateConnection('conn-lambda-rds', 600);
+            }, 1600);
+            setTimeout(() => {
+                activateComponent('rds', 1200);
+            }, 2000);
+            setTimeout(() => {
+                animationRunning = false;
+            }, 3500);
+        }
+        function simulateDataFlow() {
+            if (animationRunning) return;
+            animationRunning = true;
+            const sequence = [
+                { component: 'angular', delay: 0, duration: 600 },
+                { connection: 'conn-angular-cloudfront', delay: 200, duration: 500 },
+                { component: 'cloudfront', delay: 500, duration: 600 },
+                { connection: 'conn-cloudfront-s3', delay: 700, duration: 500 },
+                { component: 's3', delay: 1000, duration: 600 },
+                { connection: 'conn-angular-api', delay: 1200, duration: 800 },
+                { component: 'api-gateway', delay: 1500, duration: 600 },
+                { connection: 'conn-api-lambda', delay: 1700, duration: 500 },
+                { component: 'lambda', delay: 2000, duration: 800 },
+                { connection: 'conn-lambda-rds', delay: 2200, duration: 500 },
+                { component: 'rds', delay: 2500, duration: 1000 }
+            ];
+            sequence.forEach(item => {
+                setTimeout(() => {
+                    if (item.component) {
+                        activateComponent(item.component, item.duration);
+                    } else if (item.connection) {
+                        activateConnection(item.connection, item.duration);
+                    }
+                }, item.delay);
+            });
+            setTimeout(() => {
+                animationRunning = false;
+            }, 4000);
+        }
+        function resetAnimation() {
+            animationRunning = false;
+            autoMode = false;
+            document.querySelectorAll('.component').forEach(comp => {
+                comp.classList.remove('active');
+            });
+            document.querySelectorAll('.connection').forEach(conn => {
+                conn.classList.remove('active');
+            });
+            document.querySelectorAll('.status-dot').forEach(dot => {
+                dot.classList.remove('active');
+            });
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        function autoDemo() {
+            if (autoMode) {
+                autoMode = false;
+                resetAnimation();
+                return;
+            }
+            autoMode = true;
+            document.querySelector('button[onclick="autoDemo()"]')?.classList.add('active');
+            function runDemoSequence() {
+                if (!autoMode) return;
+                simulateUserRequest();
+                setTimeout(() => {
+                    if (!autoMode) return;
+                    simulateApiCall();
+                }, 3000);
+                setTimeout(() => {
+                    if (!autoMode) return;
+                    simulateDataFlow();
+                }, 7000);
+                setTimeout(() => {
+                    if (autoMode) runDemoSequence();
+                }, 12000);
+            }
+            runDemoSequence();
+        }
+        document.querySelectorAll('.component').forEach(component => {
+            component.addEventListener('click', () => {
+                const componentName = component.dataset.component;
+                if (!animationRunning) {
+                    activateComponent(componentName, 1500);
+                }
+            });
+        });
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.component').forEach((comp, index) => {
+                    setTimeout(() => {
+                        comp.style.opacity = '0';
+                        comp.style.transform = 'translateY(20px)';
+                        comp.style.transition = 'all 0.8s ease';
+                        setTimeout(() => {
+                            comp.style.opacity = '1';
+                            comp.style.transform = 'translateY(0)';
+                        }, 100);
+                    }, index * 200);
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>

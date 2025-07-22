@@ -1,0 +1,20 @@
+<div class="item-list">
+  <h2>Itens</h2>
+  <ul>
+    <li *ngFor="let item of items">
+      <span *ngIf="!editingItem || editingItem.id !== item.id">{{ item.name }}
+        <button (click)="startEdit(item)">Editar</button>
+        <button (click)="deleteItem(item.id)">Excluir</button>
+      </span>
+      <span *ngIf="editingItem && editingItem.id === item.id">
+        <input [(ngModel)]="editedName" />
+        <button (click)="saveEdit()">Salvar</button>
+        <button (click)="cancelEdit()">Cancelar</button>
+      </span>
+    </li>
+  </ul>
+  <div>
+    <input [(ngModel)]="newItemName" placeholder="Novo item" />
+    <button (click)="addItem()">Adicionar</button>
+  </div>
+</div>
