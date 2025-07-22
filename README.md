@@ -85,4 +85,127 @@ Desenvolvido por [Seu Nome].
 
 ---
 
-Se precisar de ajuda ou quiser sugerir melhorias, fique à vontade para abrir uma issue ou entrar em contato!
+
+# Guia de Deploy AWS: Frontend Angular + Backend .NET
+
+## 1. Frontend Angular: Deploy no S3 + CloudFront
+
+### a) Build do Angular
+
+1. Navegue até a pasta do frontend:
+   ```sh
+   cd API-Gateway-Angular-Dotnet/angular-frontend
+   ```
+2. Instale as dependências e faça o build:
+   ```sh
+   npm install
+   npm run build --prod
+   ```
+   O build será gerado na pasta `dist/`.
+
+### b) Criar Bucket S3 e Fazer Upload
+
+1. No console AWS, acesse **S3** e clique em "Criar bucket".
+   - Defina um nome único (ex: `meu-app-frontend`).
+   - Região: escolha a mesma do backend se possível.
+2. Após criar, acesse o bucket e clique em "Upload".
+   - Faça upload de **todos os arquivos e pastas** dentro de `dist/`.
+3. Vá em **Propriedades > Hospedagem de site estático** e ative.
+   - Defina `index.html` como documento de entrada e erro.
+4. Em **Permissões**, permita acesso público (ou siga para CloudFront para acesso privado).
+   - Em "Configurações de acesso público", desmarque "Bloquear todo acesso público" (ou mantenha bloqueado para CloudFront).
+   - Em "Política de bucket", adicione permissão de leitura pública, se necessário:
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Sid": "PublicReadGetObject",
+           "Effect": "Allow",
+           "Principal": "*",
+           "Action": "s3:GetObject",
+           "Resource": "arn:aws:s3:::meu-app-frontend/*"
+         }
+       ]
+     }
+     ```
+
+### c) (Opcional, Recomendado) Configurar CloudFront
+
+1. No console AWS, acesse **CloudFront** e clique em "Criar distribuição".
+2. Origem: selecione o bucket S3 do frontend.
+3. Em "Configurações de comportamento":
+   - Defina "Viewer Protocol Policy" como "Redirect HTTP to HTTPS".
+   - Em "Error Pages", adicione regra para redirecionar 403/404 para `/index.html` (SPA fallback).
+4. Após criar, copie o domínio CloudFront para usar como URL do frontend.
+
+---
+
+## 2. Backend .NET: Deploy no Elastic Beanstalk
+
+### a) Build e Publish do .NET
+
+1. Navegue até a pasta do backend:
+   ```sh
+   cd API-Gateway-Angular-Dotnet/dotnet-backend
+   ```
+2. Compile e publique:
+   ```sh
+   dotnet publish -c Release -o ./publish
+   ```
+   Os arquivos estarão na pasta `publish`.
+
+### b) Deploy no Elastic Beanstalk
+
+1. No console AWS, acesse **Elastic Beanstalk** e clique em "Create Application".
+2. Selecione plataforma ".NET Core on Linux".
+3. Faça upload do conteúdo da pasta `publish` (compacte em .zip para upload).
+4. Configure variáveis de ambiente (strings de conexão, secrets, etc) em "Configuration > Software > Environment properties".
+5. Aguarde o deploy e anote a URL gerada.
+
+---
+
+## 3. Banco de Dados (Amazon RDS)
+
+1. No console AWS, acesse **RDS** e clique em "Create database".
+2. Escolha o engine (MySQL, PostgreSQL, etc) e configure usuário/senha.
+3. Defina as regras de segurança para permitir acesso do backend.
+4. No backend, configure a string de conexão com os dados do RDS.
+
+---
+
+## 4. Integrações (S3, Lambda, API Gateway)
+
+- **Permissões IAM**: Crie uma role/política para o backend acessar buckets S3.
+- **Lambda**: Se usar funções serverless, faça upload do código no AWS Lambda e configure triggers.
+- **API Gateway**: Crie endpoints HTTP para expor Lambdas ou o backend.
+
+---
+
+## 5. DNS (Route 53)
+
+1. No console AWS, acesse **Route 53** e crie uma zona hospedada para seu domínio.
+2. Aponte o domínio para a distribuição CloudFront (frontend) e Elastic Beanstalk/API Gateway (backend) via registros CNAME/Alias.
+
+---
+
+## Checklist Final
+- [ ] Frontend publicado no S3/CloudFront
+- [ ] Backend publicado no Elastic Beanstalk
+- [ ] Banco RDS criado e integrado
+- [ ] Permissões IAM configuradas
+- [ ] Integrações Lambda/API Gateway prontas
+- [ ] DNS configurado no Route 53
+
+---
+
+> **Dica:** Para automação, considere usar AWS CLI, SAM, CDK ou Terraform.
+
+---
+
+## Referências
+- [Documentação AWS S3 Static Website](https://docs.aws.amazon.com/pt_br/AmazonS3/latest/userguide/WebsiteHosting.html)
+- [Documentação Elastic Beanstalk .NET](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/dotnet-core-tutorial.html)
+- [Documentação CloudFront](https://docs.aws.amazon.com/pt_br/AmazonCloudFront/latest/DeveloperGuide/Introduction.html)
+- [Documentação RDS](https://docs.aws.amazon.com/pt_br/AmazonRDS/latest/UserGuide/Welcome.html)
+- [Documentação API Gateway](https://docs.aws.amazon.com/pt_br/apigateway/latest/developerguide/welcome.html)
