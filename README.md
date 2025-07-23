@@ -35,9 +35,7 @@ AWS-API-REST/
     ├── index.html
     └── assets/
         ├── css/
-        │   └── style.css
-        └── js/
-            └── Fluxo.js
+        └── style.css
 ```
 
 - Separe imagens, ícones ou outros arquivos estáticos em `assets/img` se necessário.
